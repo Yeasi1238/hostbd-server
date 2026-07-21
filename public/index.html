@@ -2,19 +2,562 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>HostBD Server</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostBD — ফ্রি ওয়েব হোস্টিং</title>
 <style>
-  body{font-family:sans-serif;background:#0b0e14;color:#e8eaf0;display:flex;align-items:center;
-    justify-content:center;height:100vh;margin:0;text-align:center;}
-  div{max-width:400px;padding:20px;}
-  h1{background:linear-gradient(135deg,#7c5cff,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  p{color:#8b93a7;font-size:14px;}
+  :root{
+    --bg: #0b0e14;
+    --panel: rgba(255,255,255,0.05);
+    --panel-border: rgba(255,255,255,0.10);
+    --accent1: #7c5cff;
+    --accent2: #22d3ee;
+    --text: #e8eaf0;
+    --muted: #8b93a7;
+    --danger: #ff5c72;
+    --ok: #35d187;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    font-family: 'Segoe UI', 'Hind Siliguri', system-ui, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1a1f37 0%, var(--bg) 55%),
+                radial-gradient(1000px 500px at 100% 10%, #142033 0%, transparent 60%);
+    color: var(--text);
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:24px 18px 60px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .brand .logo{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b0e14;
+  }
+  .brand h1{font-size:19px;margin:0;letter-spacing:.3px;}
+  .brand span{color:var(--muted);font-size:12px;display:block;margin-top:1px;}
+
+  .card{
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    padding:22px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    margin-bottom:16px;
+  }
+  h2{font-size:16px;margin:0 0 16px;font-weight:600;}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;}
+  input{
+    width:100%;padding:12px 14px;border-radius:12px;
+    border:1px solid var(--panel-border);
+    background:rgba(255,255,255,0.03);
+    color:var(--text);font-size:14px;margin-bottom:14px;outline:none;
+  }
+  input:focus{border-color:var(--accent1);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:-10px;margin-bottom:14px;}
+  button{
+    width:100%;padding:13px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    color:#0b0e14;font-weight:700;font-size:14.5px;cursor:pointer;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  button:active{transform:scale(.98);}
+  button.secondary{
+    background:transparent;border:1px solid var(--panel-border);color:var(--text);font-weight:600;
+  }
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .toggle-row{display:flex;justify-content:center;gap:6px;margin-top:14px;font-size:13px;color:var(--muted);}
+  .toggle-row a{color:var(--accent2);text-decoration:none;font-weight:600;cursor:pointer;}
+  .msg{font-size:13px;padding:10px 12px;border-radius:10px;margin-bottom:14px;display:none;}
+  .msg.err{background:rgba(255,92,114,0.12);color:var(--danger);display:block;}
+  .msg.ok{background:rgba(53,209,135,0.12);color:var(--ok);display:block;}
+
+  .site-link{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:rgba(255,255,255,0.04);border:1px solid var(--panel-border);
+    padding:12px 14px;border-radius:12px;margin-bottom:14px;
+  }
+  .site-link a{color:var(--accent2);text-decoration:none;font-size:13.5px;word-break:break-all;}
+  .copy-btn{
+    background:rgba(255,255,255,0.08);border:none;color:var(--text);
+    padding:8px 10px;border-radius:8px;font-size:12px;cursor:pointer;width:auto;flex-shrink:0;
+  }
+  .quota-bar{height:8px;border-radius:6px;background:rgba(255,255,255,0.08);overflow:hidden;margin:8px 0 4px;}
+  .quota-fill{height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));}
+  .quota-label{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;}
+
+  .drop-zone{
+    border:1.5px dashed var(--panel-border);border-radius:14px;
+    padding:26px 14px;text-align:center;color:var(--muted);font-size:13px;
+    margin-bottom:14px;cursor:pointer;transition:border-color .15s ease;
+  }
+  .drop-zone.drag{border-color:var(--accent2);color:var(--text);}
+  .file-input{display:none;}
+
+  .file-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 4px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:13.5px;
+  }
+  .file-row:last-child{border-bottom:none;}
+  .file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .file-size{color:var(--muted);font-size:11.5px;flex-shrink:0;}
+  .del-file{background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;width:auto;padding:2px 6px;}
+  .empty-note{text-align:center;color:var(--muted);font-size:13px;padding:20px 0;}
+
+  .status-banner{
+    background:rgba(255,92,114,0.14);border:1px solid rgba(255,92,114,0.3);
+    color:var(--danger);padding:14px;border-radius:12px;font-size:13.5px;margin-bottom:16px;text-align:center;
+  }
+  .info-banner{
+    background:rgba(124,92,255,0.12);border:1px solid rgba(124,92,255,0.3);
+    color:var(--text);padding:12px 14px;border-radius:12px;font-size:12.5px;margin-bottom:14px;
+  }
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .logout-btn{width:auto;padding:8px 14px;font-size:12.5px;}
+  .spinner{
+    width:16px;height:16px;border:2px solid rgba(11,14,20,0.3);border-top-color:#0b0e14;
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #app{display:none;}
+  #auth{display:block;}
 </style>
 </head>
 <body>
-<div>
-  <h1>HostBD</h1>
-  <p>এটি হোস্টেড সাইটগুলো serve করার সার্ভার। কোনো ইউজারের সাইট দেখতে ঠিকানার শেষে তাদের ইউজারনেম যোগ করুন, যেমন: <br><b>এই-ডোমেইন/username</b></p>
+<div class="wrap">
+  <div class="brand">
+    <div class="logo">H</div>
+    <div>
+      <h1>HostBD</h1>
+      <span>ফ্রি স্ট্যাটিক ওয়েব হোস্টিং</span>
+    </div>
+  </div>
+
+  <!-- AUTH -->
+  <div id="auth">
+    <div class="card">
+      <div id="authMsg" class="msg"></div>
+
+      <div id="loginForm">
+        <h2>লগইন করুন</h2>
+        <label>ইমেইল</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com">
+        <label>পাসওয়ার্ড</label>
+        <input type="password" id="loginPass" placeholder="••••••••">
+        <button onclick="doLogin()"><span id="loginSpin" style="display:none" class="spinner"></span>লগইন</button>
+        <div class="toggle-row">অ্যাকাউন্ট নেই? <a onclick="showSignup()">সাইন আপ করুন</a></div>
+      </div>
+
+      <div id="signupForm" style="display:none">
+        <h2>নতুন অ্যাকাউন্ট</h2>
+        <label>ইউজারনেম (আপনার সাইটের ঠিকানা হবে)</label>
+        <input type="text" id="suUsername" placeholder="yourname" oninput="sanitizeUsername(this)">
+        <div class="hint" id="urlPreview">সাইট হবে: hostbd.vercel.app/yourname</div>
+        <label>ইমেইল</label>
+        <input type="email" id="suEmail" placeholder="you@example.com">
+        <label>পাসওয়ার্ড</label>
+        <input type="password" id="suPass" placeholder="কমপক্ষে ৬ ক্যারেক্টার">
+        <button onclick="doSignup()"><span id="suSpin" style="display:none" class="spinner"></span>সাইন আপ</button>
+        <div class="toggle-row">আগে থেকে অ্যাকাউন্ট আছে? <a onclick="showLogin()">লগইন করুন</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app">
+    <div class="topbar">
+      <div style="font-size:13px;color:var(--muted)" id="welcomeText"></div>
+      <button class="secondary logout-btn" onclick="doLogout()">লগআউট</button>
+    </div>
+
+    <div id="suspendedBanner" class="status-banner" style="display:none">
+      ⚠️ আপনার অ্যাকাউন্ট সাসপেন্ড করা হয়েছে। বিস্তারিত জানতে সাপোর্টে যোগাযোগ করুন।
+    </div>
+
+    <div class="card">
+      <h2>আপনার সাইট</h2>
+      <div class="site-link">
+        <a id="siteUrl" href="#" target="_blank">—</a>
+        <button class="copy-btn" onclick="copyLink()">কপি</button>
+      </div>
+      <div class="quota-label"><span>স্টোরেজ ব্যবহার</span><span id="quotaText">0 KB / 800 KB</span></div>
+      <div class="quota-bar"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="info-banner">
+        ℹ️ HTML/CSS/JS/টেক্সট ফাইল এখানে আপলোড হবে। ছবি/ভিডিও এর জন্য নিচের "ছবি আপলোড" অংশ ব্যবহার করুন।
+      </div>
+      <h2>ফাইল আপলোড করুন</h2>
+      <div id="dropZone" class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        📁 ফাইল বাছাই করতে ট্যাপ করুন, বা এখানে ড্র্যাগ করুন<br>
+        <small>(root এ index.html রাখতে হবে)</small>
+      </div>
+      <input type="file" id="fileInput" class="file-input" multiple accept=".html,.htm,.css,.js,.json,.svg,.txt,.md">
+      <div id="uploadMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>ছবি আপলোড করুন</h2>
+      <div class="hint" style="margin-top:0">ছবি Cloudinary তে জমা হবে, একটা লিংক পাবেন — সেই লিংক আপনার HTML এর &lt;img&gt; ট্যাগে বসাবেন।</div>
+      <div id="imgDropZone" class="drop-zone" onclick="document.getElementById('imgInput').click()">
+        🖼️ ছবি বাছাই করতে ট্যাপ করুন, বা এখানে ড্র্যাগ করুন
+      </div>
+      <input type="file" id="imgInput" class="file-input" accept="image/*">
+      <div id="imgMsg" class="msg"></div>
+      <div id="imgResult" style="display:none">
+        <div class="site-link">
+          <a id="imgLinkOut" href="#" target="_blank" style="font-size:12.5px">—</a>
+          <button class="copy-btn" onclick="copyImgLink()">কপি</button>
+        </div>
+        <img id="imgPreview" style="width:100%;border-radius:10px;margin-top:6px;display:none">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>আপনার ফাইলসমূহ (HTML/CSS/JS)</h2>
+      <div id="fileList"></div>
+    </div>
+  </div>
 </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, getDoc, updateDoc, deleteField
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+// ==== TODO: আপনার Firebase project config এখানে বসান ====
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ==== TODO: আপনার Vercel serving সাইটের ডোমেইন এখানে বসান ====
+const HOSTING_DOMAIN = "https://your-hostbd-server.vercel.app";
+const QUOTA_BYTES = 800 * 1024; // 800KB প্রতি ইউজার (Firestore ডকুমেন্ট লিমিট 1MB এর নিচে রাখতে)
+const ALLOWED_EXT = ['html','htm','css','js','json','svg','txt','md'];
+// ==== TODO: Cloudinary ড্যাশবোর্ড থেকে এই দুইটা বসান (cloudinary.com, ফ্রি, কার্ড লাগে না) ====
+const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME";
+const CLOUDINARY_UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentUsername = null;
+
+window.showSignup = () => {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'block';
+  clearMsg();
+};
+window.showLogin = () => {
+  document.getElementById('signupForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+  clearMsg();
+};
+window.sanitizeUsername = (el) => {
+  el.value = el.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  document.getElementById('urlPreview').textContent = `সাইট হবে: ${HOSTING_DOMAIN.replace('https://','')}/${el.value || 'yourname'}`;
+};
+function clearMsg(){
+  const m = document.getElementById('authMsg');
+  m.style.display='none'; m.textContent='';
+}
+function showMsg(text, type){
+  const m = document.getElementById('authMsg');
+  m.textContent = text; m.className = 'msg ' + type;
+}
+
+window.doSignup = async () => {
+  const username = document.getElementById('suUsername').value.trim();
+  const email = document.getElementById('suEmail').value.trim();
+  const pass = document.getElementById('suPass').value;
+  clearMsg();
+
+  if (username.length < 3) return showMsg('ইউজারনেম কমপক্ষে ৩ ক্যারেক্টার হতে হবে', 'err');
+  if (!email || pass.length < 6) return showMsg('সঠিক ইমেইল ও কমপক্ষে ৬ ক্যারেক্টার পাসওয়ার্ড দিন', 'err');
+
+  document.getElementById('suSpin').style.display = 'inline-block';
+  try {
+    const unameDoc = await getDoc(doc(db, 'usernames', username));
+    if (unameDoc.exists()) {
+      showMsg('এই ইউজারনেমটি আগে থেকে নেওয়া হয়ে গেছে', 'err');
+      document.getElementById('suSpin').style.display = 'none';
+      return;
+    }
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const uid = cred.user.uid;
+
+    await setDoc(doc(db, 'users', uid), {
+      username, email, createdAt: Date.now(), status: 'active', storageUsed: 0
+    });
+    await setDoc(doc(db, 'usernames', username), { uid });
+    await setDoc(doc(db, 'sites', username), { uid, files: {}, updatedAt: Date.now() });
+
+    showMsg('অ্যাকাউন্ট তৈরি হয়েছে!', 'ok');
+  } catch (e) {
+    document.getElementById('suSpin').style.display = 'none';
+    showMsg(friendlyError(e), 'err');
+  }
+};
+
+window.doLogin = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  clearMsg();
+  if (!email || !pass) return showMsg('ইমেইল ও পাসওয়ার্ড দিন', 'err');
+  document.getElementById('loginSpin').style.display = 'inline-block';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    document.getElementById('loginSpin').style.display = 'none';
+    showMsg(friendlyError(e), 'err');
+  }
+};
+
+window.doLogout = () => signOut(auth);
+
+function friendlyError(e){
+  const code = e.code || '';
+  if (code.includes('email-already-in-use')) return 'এই ইমেইল দিয়ে আগে থেকে অ্যাকাউন্ট আছে';
+  if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return 'ইমেইল বা পাসওয়ার্ড ভুল';
+  if (code.includes('invalid-email')) return 'ইমেইল ঠিকানা সঠিক নয়';
+  return 'কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন';
+}
+
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById('loginSpin').style.display = 'none';
+  document.getElementById('suSpin').style.display = 'none';
+  if (user) {
+    currentUser = user;
+    const udoc = await getDoc(doc(db, 'users', user.uid));
+    if (!udoc.exists()) return;
+    const data = udoc.data();
+    currentUsername = data.username;
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('welcomeText').textContent = `স্বাগতম, ${data.username}`;
+    document.getElementById('siteUrl').textContent = `${HOSTING_DOMAIN.replace('https://','')}/${data.username}`;
+    document.getElementById('siteUrl').href = `${HOSTING_DOMAIN}/${data.username}`;
+    document.getElementById('suspendedBanner').style.display = data.status === 'suspended' ? 'block' : 'none';
+    updateQuotaUI(data.storageUsed || 0);
+    loadFiles();
+  } else {
+    currentUser = null; currentUsername = null;
+    document.getElementById('auth').style.display = 'block';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+function updateQuotaUI(used){
+  const pct = Math.min(100, (used / QUOTA_BYTES) * 100);
+  document.getElementById('quotaFill').style.width = pct + '%';
+  document.getElementById('quotaText').textContent = `${formatBytes(used)} / ${formatBytes(QUOTA_BYTES)}`;
+}
+function formatBytes(b){
+  if (b < 1024) return b + ' B';
+  return (b/1024).toFixed(1) + ' KB';
+}
+function byteSize(str){
+  return new Blob([str]).size;
+}
+
+window.copyLink = () => {
+  const url = `${HOSTING_DOMAIN}/${currentUsername}`;
+  navigator.clipboard.writeText(url);
+  const btn = document.querySelector('.copy-btn');
+  const orig = btn.textContent;
+  btn.textContent = 'কপি হয়েছে ✓';
+  setTimeout(()=> btn.textContent = orig, 1500);
+};
+
+// ---- File upload (stored as text inside Firestore) ----
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+
+function readFileAsText(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+async function handleFiles(fileListObj){
+  if (!currentUser) return;
+  const uMsg = document.getElementById('uploadMsg');
+  const files = Array.from(fileListObj);
+
+  const rejected = files.filter(f => !ALLOWED_EXT.includes((f.name.split('.').pop()||'').toLowerCase()));
+  if (rejected.length) {
+    uMsg.className = 'msg err'; uMsg.style.display='block';
+    uMsg.textContent = `এই ফরম্যাট সাপোর্ট করে না: ${rejected.map(f=>f.name).join(', ')}`;
+    fileInput.value = '';
+    return;
+  }
+
+  const siteDoc = await getDoc(doc(db, 'sites', currentUsername));
+  const existingFiles = siteDoc.exists() ? (siteDoc.data().files || {}) : {};
+  const existingBytes = Object.values(existingFiles).reduce((s,c)=>s+byteSize(c),0);
+
+  uMsg.className = 'msg ok'; uMsg.style.display='block';
+  uMsg.textContent = 'আপলোড হচ্ছে...';
+
+  try {
+    const updates = {};
+    let newBytes = 0;
+    for (const file of files) {
+      const content = await readFileAsText(file);
+      updates[`files.${file.name}`] = content;
+      newBytes += byteSize(content);
+      // account for replacing an existing file with the same name
+      if (existingFiles[file.name]) newBytes -= byteSize(existingFiles[file.name]);
+    }
+    if (existingBytes + newBytes > QUOTA_BYTES) {
+      uMsg.className = 'msg err';
+      uMsg.textContent = 'স্টোরেজ কোটা শেষ — কিছু ফাইল ডিলিট করে আবার চেষ্টা করুন';
+      fileInput.value = '';
+      return;
+    }
+    updates.updatedAt = Date.now();
+    await updateDoc(doc(db, 'sites', currentUsername), updates);
+    const newUsed = existingBytes + newBytes;
+    await updateDoc(doc(db, 'users', currentUser.uid), { storageUsed: newUsed });
+    updateQuotaUI(newUsed);
+    uMsg.textContent = 'আপলোড সম্পন্ন ✓';
+    loadFiles();
+  } catch (e) {
+    uMsg.className = 'msg err';
+    uMsg.textContent = 'আপলোডে সমস্যা হয়েছে';
+  }
+  fileInput.value = '';
+}
+
+async function loadFiles(){
+  const listEl = document.getElementById('fileList');
+  listEl.innerHTML = '<div class="empty-note">লোড হচ্ছে...</div>';
+  try {
+    const siteDoc = await getDoc(doc(db, 'sites', currentUsername));
+    const files = siteDoc.exists() ? (siteDoc.data().files || {}) : {};
+    const names = Object.keys(files);
+    if (names.length === 0) {
+      listEl.innerHTML = '<div class="empty-note">এখনো কোনো ফাইল আপলোড করা হয়নি</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    names.forEach(name => {
+      const size = byteSize(files[name]);
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.innerHTML = `
+        <span class="file-name">${name}</span>
+        <span class="file-size">${formatBytes(size)}</span>
+        <button class="del-file" data-name="${name}" data-size="${size}">✕</button>`;
+      listEl.appendChild(row);
+    });
+    listEl.querySelectorAll('.del-file').forEach(btn => {
+      btn.onclick = () => deleteFile(btn.dataset.name, parseInt(btn.dataset.size));
+    });
+  } catch (e) {
+    listEl.innerHTML = '<div class="empty-note">ফাইল লোড করা যায়নি</div>';
+  }
+}
+
+async function deleteFile(name, size){
+  if (!confirm(`"${name}" ডিলিট করতে চান?`)) return;
+  try {
+    await updateDoc(doc(db, 'sites', currentUsername), { [`files.${name}`]: deleteField(), updatedAt: Date.now() });
+    const udoc = await getDoc(doc(db, 'users', currentUser.uid));
+    const used = Math.max(0, (udoc.data().storageUsed || 0) - size);
+    await updateDoc(doc(db, 'users', currentUser.uid), { storageUsed: used });
+    updateQuotaUI(used);
+    loadFiles();
+  } catch (e) {
+    alert('ডিলিট করা যায়নি');
+  }
+}
+
+// ---- Image upload (via Cloudinary, free — no card needed) ----
+const imgDropZone = document.getElementById('imgDropZone');
+const imgInput = document.getElementById('imgInput');
+imgInput.addEventListener('change', (e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0]); });
+imgDropZone.addEventListener('dragover', (e) => { e.preventDefault(); imgDropZone.classList.add('drag'); });
+imgDropZone.addEventListener('dragleave', () => imgDropZone.classList.remove('drag'));
+imgDropZone.addEventListener('drop', (e) => {
+  e.preventDefault(); imgDropZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleImageUpload(e.dataTransfer.files[0]);
+});
+
+let lastImgUrl = '';
+
+async function handleImageUpload(file){
+  const msg = document.getElementById('imgMsg');
+  if (!file.type.startsWith('image/')) {
+    msg.className = 'msg err'; msg.style.display = 'block';
+    msg.textContent = 'শুধু ছবি ফাইল আপলোড করা যাবে';
+    return;
+  }
+  if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') {
+    msg.className = 'msg err'; msg.style.display = 'block';
+    msg.textContent = 'Cloudinary এখনো সেটআপ করা হয়নি — কোডে CLOUDINARY_CLOUD_NAME বসান';
+    return;
+  }
+  msg.className = 'msg ok'; msg.style.display = 'block';
+  msg.textContent = 'আপলোড হচ্ছে...';
+  document.getElementById('imgResult').style.display = 'none';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    // ইউজারভিত্তিক ফোল্ডারে রাখা, যাতে সহজে আলাদা করা যায়
+    formData.append('folder', `hostbd/${currentUsername}`);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('no url');
+
+    lastImgUrl = data.secure_url;
+    msg.textContent = 'আপলোড সম্পন্ন ✓';
+    document.getElementById('imgLinkOut').textContent = data.secure_url;
+    document.getElementById('imgLinkOut').href = data.secure_url;
+    document.getElementById('imgPreview').src = data.secure_url;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('imgResult').style.display = 'block';
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = 'আপলোডে সমস্যা হয়েছে — cloud name/preset ঠিক আছে কিনা দেখুন';
+  }
+  imgInput.value = '';
+}
+
+window.copyImgLink = () => {
+  if (!lastImgUrl) return;
+  navigator.clipboard.writeText(lastImgUrl);
+  const btn = document.querySelector('#imgResult .copy-btn');
+  const orig = btn.textContent;
+  btn.textContent = 'কপি হয়েছে ✓';
+  setTimeout(()=> btn.textContent = orig, 1500);
+};
+</script>
 </body>
 </html>
