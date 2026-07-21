@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/:username", "destination": "/api/serve?username=:username&path=index.html" },
+    { "source": "/:username/:path*", "destination": "/api/serve?username=:username&path=:path*" }
+  ]
+}
