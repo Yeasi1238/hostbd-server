@@ -1,0 +1,6 @@
+{
+  "name": "hostbd-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Serves user-hosted static sites stored in Firestore, path-based routing (domain/username)."
+}
